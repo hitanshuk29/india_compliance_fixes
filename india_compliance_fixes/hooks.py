@@ -1,7 +1,7 @@
 app_name = "india_compliance_fixes"
-app_title = "test"
+app_title = "India Compliance Fixes"
 app_publisher = "SMB"
-app_description = "test"
+app_description = "Site-specific patches for the India Compliance app"
 app_email = "smbsolutions@kwtcom"
 app_license = "mit"
 
@@ -144,13 +144,19 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+# before_validate on india_compliance's own GST doctypes guarantees the monkeypatch
+# (see gst_patches.py) is installed before its validate_item_tax_template ever runs,
+# since frappe.get_hooks()/frappe.init() do not import hooks.py eagerly on their own.
+# apply() is idempotent, so this is a no-op after the first document of any of these
+# doctypes is validated in a given worker process.
+_GST_DOCTYPES = (
+	"Purchase Invoice",
+	"Sales Invoice",
+)
+
+doc_events = {
+	doctype: {"before_validate": "india_compliance_fixes.gst_patches.apply"} for doctype in _GST_DOCTYPES
+}
 
 # Scheduled Tasks
 # ---------------
